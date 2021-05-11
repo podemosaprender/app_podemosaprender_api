@@ -2,9 +2,7 @@
 // escribo funciones que se puedan probar por separado, despues las junto
 
 var PODEMOS_APRENDER_API_PFX = "https://si.podemosaprender.org/api/";
-PODEMOS_APRENDER_API_PFX = "http://localhost:8000/api/";
-// eslint-disable-next-line
-var Tokens = null;
+export PODEMOS_APRENDER_API_PFX; //U: para usar otro servidor si queres
 
 //S: guardar el token aunque se cierre la app o pagina
 export function tokenGuardar(tokens, usuario) {
@@ -52,7 +50,6 @@ export async function apiTokenConseguir(usr, pass) {
     body: JSON.stringify({ username: usr, password: pass }),
   });
   const resData = await res.json();
-  Tokens = resData; //A: los guardo para uso futuro
   return resData;
 }
 
