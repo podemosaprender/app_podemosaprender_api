@@ -1,0 +1,138 @@
+<html>
+<head>
+  <meta charset="UTF-8">
+</head>
+<body>
+<h1>Aprendé a agregar pantallas a la app de PodemosAprender usando la API</h1>
+
+<ol>
+<li> Mirá el código fuente de esta página </li>
+<li> Hacé fork de este repo en github y editá tu copia </li>
+<li> Habilitá gitpages y comparti la url </li>
+</ol>
+
+<h2>Ejemplo de login y consulta</h2>
+
+<h3>Si querés usar otro servidor, ej. local tuyo</h3>
+<div>
+<input id="servidor" size="60"><br>
+<button id="btn_servidor">Usar este servidor</button>
+<button id="btn_servidor_real">Usar servidor real</button>
+<button id="btn_servidor_django">Usar servidor local</button>
+</div>
+
+
+<h3>Siempre podés empezar revisando si necesitás registrarte</h3>
+<div>
+<div id="estado">
+</div>
+<button id="btn_estado">Revisar Estado</button>
+</div>
+
+<h3>Si necesitási registrarte, usás tu usuario y clave</h3>
+<div>
+<input id="usuario">
+<input id="clave">
+<button id="btn_login">Registrarse</button>
+<div id="msj_login"></div>
+</div>
+
+<h3>Ahora podés hacer consultas graphql así</h3>
+<textarea id="consulta" rows=10 cols=80>{ hola }</textarea>
+<br>
+<button id="btn_ej_hola">ej. Hola</button>
+<button id="btn_ej_textos">ej. Textos</button>
+<button id="btn_consulta">Consultar</button>
+<pre id="msj_consulta"></pre>
+
+
+<script type="module">
+	import * as PaApi from 'https://www.podemosaprender.org/app_podemosaprender_api/pa-api.js';	
+	//A: importamos la version PUBLICA, oficial, mantenida, de la api
+
+	//DEV: import * as PaApi from './pa-api-consola.js'; //U: importar la API del mismo lugar donde cargaste esta pagina
+
+	var el= {}; //U: un diccionario con los elementos del DOM que quiero usar
+	'servidor btn_servidor btn_servidor_real btn_servidor_django estado btn_estado usuario clave btn_login msj_login consulta btn_consulta msj_consulta btn_ej_hola btn_ej_textos'.split(' ').forEach(id => { el[id]= document.getElementById(id) })
+	
+	function ui_cambiar_servidor() {
+		PaApi.CFG.api_url= el.servidor.value;
+		localStorage.PaApiServidor= PaApi.CFG.api_url;
+	}
+	el.btn_servidor.onclick= ui_cambiar_servidor;
+
+	el.servidor.value= localStorage.PaApiServidor || 'https://si.podemosaprender.org';
+	ui_cambiar_servidor(); //A: inicializamos
+
+	function ui_cambiar_servidor_django() {
+		el.servidor.value= 'http://localhost:8000';
+		ui_cambiar_servidor();
+	}
+	el.btn_servidor_django.onclick= ui_cambiar_servidor_django;
+
+	function ui_cambiar_servidor_real() {
+		el.servidor.value= 'https://si.podemosaprender.org'
+		ui_cambiar_servidor();
+	}
+	el.btn_servidor_real.onclick= ui_cambiar_servidor_real;
+
+
+	async function ui_revisar_estado() {
+		el.estado.innerText= 'revisando ...';
+		console.log(typeof(PaApi.apiNecesitoLoginP))
+		try {
+			var necesitaLogin= await PaApi.apiNecesitoLoginP();
+			if (necesitaLogin) {
+				el.estado.innerText= 'Si, necesitás registrarte';
+			}
+			else {
+				el.estado.innerText= 'Ya te registraste y tu token no expiró!';
+			}
+		}
+		catch (ex) {
+			el.estado.innerText= 'ERROR: '+ex.message;
+		}
+	}
+	el.btn_estado.onclick= ui_revisar_estado;
+
+	async function ui_registrarse() {
+		el.msj_login.innerText= 'intentando ...';
+		var usuario= el.usuario.value; //A: lo leemos de la cajita input que se llama asi
+		var clave= el.clave.value;
+		//OjO! SEGURIDAD! Nunca los guardes, ni los envies por http, o a otro servidor
+		var resultado= await PaApi.apiLogin(usuario, clave);
+		if (resultado.error) { //A: algo fallo
+			el.msj_login.innerText= 'ERROR: '+resultado.error;	
+		}
+		else {
+			el.msj_login.innerText= 'Funcionó!'
+		}
+	}
+	el.btn_login.onclick= ui_registrarse;
+
+	async function ui_consultar() {
+		el.msj_consulta.innerText= 'Consultando ...';
+		var graphql= el.consulta.value;
+		try {
+			var data= await PaApi.fetchConToken({query:graphql});
+			el.msj_consulta.innerText= JSON.stringify(data,null,1);
+		}
+		catch (ex) {
+			el.msj_consulta.innerText= 'ERROR: '+ex.message;
+		}
+	}
+	el.btn_consulta.onclick= ui_consultar;
+
+	function ui_ej_hola() {
+		el.consulta.value= '{ hola }';
+	}
+	el.btn_ej_hola.onclick= ui_ej_hola;
+
+	function ui_ej_textos() {
+		el.consulta.value= '{ textoAll(orderBy: [\"-fhCreado\"], first: 2, offset: 10) { edges { node { id, fhCreado, texto } } } }';
+	}
+	el.btn_ej_textos.onclick= ui_ej_textos;
+
+</script>
+</body>
+</html>
